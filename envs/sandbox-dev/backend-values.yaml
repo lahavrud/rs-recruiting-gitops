@@ -1,0 +1,21 @@
+# Overlay for the helm/backend chart in lahavrud/rs-recruiting (issue #20).
+# sandbox-dev was previously manual-only (a hand-run `helm install`, see the
+# chart's README history) — this overlay formally upgrades it to
+# ArgoCD-managed, same as sandbox-staging/sandbox-prod. image.tag here is
+# rewritten by the sandbox deploy workflow on every merge to main in
+# lahavrud/rs-recruiting (issue #22), same trigger as sandbox-staging.
+image:
+  repository: "<ECR_REPOSITORY_URL>/rs-recruiting-backend"
+  tag: "placeholder"
+
+# Created by Tofu (rs-recruiting-infra's environment module) from real
+# RDS/JWT values — see helm/backend's README in rs-recruiting for why no
+# secret material lives in this file.
+existingSecret: backend-secrets
+
+# sandbox-dev shares the one ALB with sandbox-staging/sandbox-prod — this
+# prefix keeps its routes from colliding with theirs. No CloudFront origin
+# for this namespace (see rs-recruiting-infra's cdn.tf); local frontend dev
+# hits the ALB hostname + /dev directly.
+httpRoute:
+  pathPrefix: "/dev"

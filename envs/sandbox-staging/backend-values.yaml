@@ -4,3 +4,14 @@
 image:
   repository: "<ECR_REPOSITORY_URL>/rs-recruiting-backend"
   tag: "placeholder"
+
+# Created by Tofu (rs-recruiting-infra's environment module) from real
+# RDS/JWT values — see helm/backend's README in rs-recruiting for why no
+# secret material lives in this file.
+existingSecret: backend-secrets
+
+# sandbox-staging shares the one ALB with sandbox-dev/sandbox-prod — this
+# prefix keeps its routes from colliding with theirs (matches CloudFront's
+# /staging origin_path in rs-recruiting-infra's cdn.tf).
+httpRoute:
+  pathPrefix: "/staging"
