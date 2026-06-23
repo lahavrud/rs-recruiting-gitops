@@ -1,6 +1,0 @@
-# Overlay for the helm/frontend chart in lahavrud/rs-recruiting (issue #18).
-# image.tag is rewritten by the tag-based promote workflow on every v* tag
-# push in lahavrud/rs-recruiting (issue #23) — ArgoCD auto-syncs from there.
-image:
-  repository: "<ECR_REPOSITORY_URL>/rs-recruiting-frontend"
-  tag: "placeholder"

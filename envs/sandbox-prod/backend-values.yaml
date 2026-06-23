@@ -4,3 +4,13 @@
 image:
   repository: "<ECR_REPOSITORY_URL>/rs-recruiting-backend"
   tag: "placeholder"
+
+# Created by Tofu (rs-recruiting-infra's environment module) from real
+# RDS/JWT values — see helm/backend's README in rs-recruiting for why no
+# secret material lives in this file.
+existingSecret: backend-secrets
+
+# Unprefixed — matches rs-recruiting-infra's cdn.tf, which forwards /api etc.
+# to the ALB unprefixed for sandbox-prod.
+httpRoute:
+  pathPrefix: ""

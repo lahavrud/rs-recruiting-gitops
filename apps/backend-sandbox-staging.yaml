@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: backend-sandbox-staging
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    - repoURL: https://github.com/lahavrud/rs-recruiting.git
+      targetRevision: main
+      path: helm/backend
+      helm:
+        valueFiles:
+          - $values/envs/sandbox-staging/backend-values.yaml
+    - repoURL: https://github.com/lahavrud/rs-recruiting-gitops.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sandbox-staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

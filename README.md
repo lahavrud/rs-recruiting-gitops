@@ -2,20 +2,25 @@
 
 GitOps source of truth for the `rs-recruiting` sandbox environment. ArgoCD
 (running in the `rs-recruiting-sandbox` AWS account's EKS cluster) syncs from
-this repo; nothing here is applied by hand.
+this repo; nothing here is applied by hand, except the one bootstrap
+Application described below.
 
 ## Layout
 
 | Path | Purpose |
 |---|---|
-| `envs/sandbox-staging/` | Values overlays for the `sandbox-staging` namespace, synced on every merge to `main` in [`rs-recruiting`](https://github.com/lahavrud/rs-recruiting) |
-| `envs/sandbox-prod/` | Values overlays for the `sandbox-prod` namespace, synced on every `v*` tag push in `rs-recruiting` |
+| `bootstrap/root.yaml` | The "app of apps" — the only manifest applied imperatively, once, by Tofu (`rs-recruiting-infra`'s `argocd.tf`, via `kubectl`). Points ArgoCD at `apps/` in this repo. |
+| `apps/` | One ArgoCD `Application` per backend namespace (`sandbox-dev`/`sandbox-staging`/`sandbox-prod`). The `root` Application above watches this directory — add, remove, or edit an `Application` here and ArgoCD picks it up on its own, no Tofu/`kubectl` involved. |
+| `envs/sandbox-dev/`, `envs/sandbox-staging/`, `envs/sandbox-prod/` | `backend-values.yaml` overlay for the matching `Application` in `apps/` — Helm values for the chart at `helm/backend/` in [`rs-recruiting`](https://github.com/lahavrud/rs-recruiting). `image.tag` is the field CI rewrites on deploy. |
 
-Each env has `backend-values.yaml` and `frontend-values.yaml` — overlays for
-the Helm charts that live in `rs-recruiting` at `helm/backend/` and
-`helm/frontend/`. `image.tag` in each file is the field CI rewrites on
-deploy; ArgoCD's `Application` resources (defined in the infra repo, see
-below) point at the chart + the matching overlay here.
+Each `Application` is multi-source: one source is the chart itself
+(`rs-recruiting` at `helm/backend/`), the other is a `ref` source pointing
+back at this repo so the chart source's `helm.valueFiles` can reference the
+matching `envs/<namespace>/backend-values.yaml` via `$values/...`.
+
+No frontend overlay — the frontend deploys to S3 + CloudFront instead of
+in-cluster (see #18, superseded by `rs-recruiting-infra`'s `cdn.tf`), so
+there's no frontend `Application` or values file here.
 
 ## Accessing ArgoCD
 
@@ -43,10 +48,17 @@ Grafana is reachable the same way, under `/grafana/`, with credentials in
 ## Deploy flow
 
 1. Merge to `main` in `rs-recruiting` → CI builds + pushes images → updates
-   `image.tag` in `envs/sandbox-staging/*-values.yaml` here → ArgoCD syncs
-   `sandbox-staging`.
-2. Push a `v*` tag in `rs-recruiting` → CI updates `envs/sandbox-prod/*-values.yaml`
-   here → ArgoCD syncs `sandbox-prod`.
+   `image.tag` in `envs/sandbox-dev/backend-values.yaml` and
+   `envs/sandbox-staging/backend-values.yaml` here → ArgoCD syncs
+   `sandbox-dev` and `sandbox-staging`.
+2. Push a `v*` tag in `rs-recruiting` → CI updates
+   `envs/sandbox-prod/backend-values.yaml` here → ArgoCD syncs `sandbox-prod`.
 
 Both directions skip silently if the sandbox SSM flag (`/rs-recruiting/sandbox/active`)
 is absent — i.e. if nobody has the cluster up.
+
+Runtime secrets (`DATABASE_URL`, `JWT_SECRET_KEY`) never appear in this
+repo — each `backend-values.yaml` sets `existingSecret: backend-secrets`,
+a Secret Tofu creates per namespace from values it already knows (the RDS
+password, a generated JWT secret). See `helm/backend`'s README in
+`rs-recruiting` for how the chart consumes it.
