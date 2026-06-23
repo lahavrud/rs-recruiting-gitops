@@ -5,14 +5,12 @@
 # rewritten by the sandbox deploy workflow on every merge to main in
 # lahavrud/rs-recruiting (issue #22), same trigger as sandbox-staging.
 image:
-  repository: "<ECR_REPOSITORY_URL>/rs-recruiting-backend"
-  tag: "placeholder"
-
+  repository: "089783390207.dkr.ecr.us-east-1.amazonaws.com/rs-recruiting/backend"
+  tag: "cce606ba314e56be8df54c1a3d5f4ee019f669d9"
 # Created by Tofu (rs-recruiting-infra's environment module) from real
 # RDS/JWT values — see helm/backend's README in rs-recruiting for why no
 # secret material lives in this file.
 existingSecret: backend-secrets
-
 # sandbox-dev shares the one ALB with sandbox-staging/sandbox-prod — this
 # prefix keeps its routes from colliding with theirs. No CloudFront origin
 # for this namespace (see rs-recruiting-infra's cdn.tf); local frontend dev
