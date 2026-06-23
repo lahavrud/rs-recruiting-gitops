@@ -1,6 +1,7 @@
 # Overlay for the helm/backend chart in lahavrud/rs-recruiting (issue #17).
-# image.tag is rewritten by the tag-based promote workflow on every v* tag
-# push in lahavrud/rs-recruiting (issue #23) — ArgoCD auto-syncs from there.
+# image.tag is rewritten by the sandbox-promote workflow's promote-prod job
+# on every final (non-RC) vX.Y.Z tag push in lahavrud/rs-recruiting (issue
+# #23) — ArgoCD auto-syncs from there.
 image:
   repository: "<ECR_REPOSITORY_URL>/rs-recruiting-backend"
   tag: "placeholder"

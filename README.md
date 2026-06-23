@@ -47,14 +47,22 @@ Grafana is reachable the same way, under `/grafana/`, with credentials in
 
 ## Deploy flow
 
-1. Merge to `main` in `rs-recruiting` → CI builds + pushes images → updates
-   `image.tag` in `envs/sandbox-dev/backend-values.yaml` and
-   `envs/sandbox-staging/backend-values.yaml` here → ArgoCD syncs
-   `sandbox-dev` and `sandbox-staging`.
-2. Push a `v*` tag in `rs-recruiting` → CI updates
-   `envs/sandbox-prod/backend-values.yaml` here → ArgoCD syncs `sandbox-prod`.
+Three real stages, each gated behind a different trigger — not three copies
+of the same deploy:
 
-Both directions skip silently if the sandbox SSM flag (`/rs-recruiting/sandbox/active`)
+1. Merge to `main` in `rs-recruiting` → CI builds + pushes an image → updates
+   `image.tag` in `envs/sandbox-dev/backend-values.yaml` here → ArgoCD syncs
+   `sandbox-dev`. Every merge, no gate — fast feedback.
+2. Push an RC tag (`vX.Y.Z-rc.N`) in `rs-recruiting` → CI updates
+   `envs/sandbox-staging/backend-values.yaml` here → ArgoCD syncs
+   `sandbox-staging`. A deliberate "I'm cutting a release" step, not
+   something that happens on every merge.
+3. Push a final tag (`vX.Y.Z`) in `rs-recruiting` → CI updates
+   `envs/sandbox-prod/backend-values.yaml` here → ArgoCD syncs
+   `sandbox-prod`, re-tagging the image already pushed for that RC rather
+   than rebuilding.
+
+All three skip silently if the sandbox SSM flag (`/rs-recruiting/sandbox/active`)
 is absent — i.e. if nobody has the cluster up.
 
 Runtime secrets (`DATABASE_URL`, `JWT_SECRET_KEY`) never appear in this
